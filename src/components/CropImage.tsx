@@ -1,9 +1,11 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import ReactCrop from "react-image-crop";
 
 import "react-image-crop/dist/ReactCrop.css";
 import Button from "./Button";
-import "./style.scss";
+import RadioButton from "./RadioButton";
+import { sendToServerFunc } from "../service/api";
+import "../styles/style.scss";
 
 interface Crop {
   unit: "px" | "%";
@@ -14,6 +16,12 @@ interface Crop {
   height?: number;
 }
 
+const radioButton = [
+  { name: "radio", size: 0, title: "Auto" },
+  { name: "radio", size: 1, title: "1:1" },
+  { name: "radio", size: 16 / 9, title: "16:9" },
+];
+
 const CropImage: React.FC = () => {
   const imgRef = useRef<HTMLImageElement>();
   const fileInput = useRef<HTMLInputElement | null>(null);
@@ -23,9 +31,11 @@ const CropImage: React.FC = () => {
   const [nameImg, setNameImg] = useState<string | undefined | null>(null);
   const [cropBase64, setCropBase64] = useState<any>("");
   const [cropFile, setCropFile] = useState<any>("");
-  const [completedImage, setCompletedImage] = useState<any>();
-  const [crop, setCrop] = useState<Crop>({ unit: "%", width: 30 });
+  const [completedImage, setCompletedImage] = useState<any>(null);
+  const [crop, setCrop] = useState<Crop>({ unit: "%", width: 30, aspect: 0 });
   const [completedCrop, setCompletedCrop] = useState<Crop | null>(null);
+  const [serverUrl, setServerUrl] = useState<string>("");
+  const [isVisibleInput, setVisibleInput] = useState(false);
 
   const onSelectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -99,8 +109,8 @@ const CropImage: React.FC = () => {
         cropAvatar.height ? cropAvatar.height * scaleY : 0
       );
     }
-
     generateAvatar(canvas);
+    setCompletedImage(null);
   }, [completedCrop]);
 
   const downloadImage = () => {
@@ -110,12 +120,10 @@ const CropImage: React.FC = () => {
     previewCanvasRef.current.toBlob(
       (blob) => {
         const previewUrl = window.URL.createObjectURL(blob);
-
         const anchor = document.createElement("a");
-        anchor.download = "cropPreview.png";
+        anchor.download = nameImg ? nameImg : "CropImage";
         anchor.href = URL.createObjectURL(blob);
         anchor.click();
-
         window.URL.revokeObjectURL(previewUrl);
       },
       "image/png",
@@ -123,26 +131,26 @@ const CropImage: React.FC = () => {
     );
   };
 
+  async function preSendToServer() {
+    setVisibleInput(true);
+  }
+
   async function sendToServer() {
     const completedAvatarImage = new File(
       [cropFile],
-      nameImg || "name does not exist",
+      nameImg || "name doesn't exist",
       {
-        type: "image/png",
+        type: "image/jpeg",
       }
     );
     const formData: FormData = new FormData();
     formData.append("file", completedAvatarImage);
-
-    let response = await fetch(`url`, {
-      method: "POST",
-      headers: {
-        uploadFile: "file",
-        "Content-Type": `multipart/form-data;`,
-      },
-      body: formData,
-    });
+    sendToServerFunc(formData, serverUrl);
   }
+
+  const abortSending = () => {
+    setVisibleInput(false);
+  };
 
   const convertToBase64 = () => {
     setCompletedImage(cropBase64);
@@ -176,10 +184,27 @@ const CropImage: React.FC = () => {
     </>
   );
 
+  const setResize = (elem: number) => {
+    setCrop({ ...crop, aspect: elem });
+  };
+
   return (
     <>
       <div className="crop-wrapper">
-        <h1>React crop image</h1>
+        <h1 className="crop-title">React crop image</h1>
+        <div>
+          <span className="crop-choose-resize">Resize width/height: </span>
+          {radioButton.map((elem) => {
+            return (
+              <RadioButton
+                name={elem.name}
+                title={elem.title}
+                func={() => setResize(elem.size)}
+                key={elem.title}
+              />
+            );
+          })}
+        </div>
         {!nameImg && (
           <div className="crop-wrapper-input">
             <span className="crop-input-description">
@@ -207,7 +232,7 @@ const CropImage: React.FC = () => {
             />
           </div>
         )}
-        {nameImg && <span>File name: {nameImg}</span>}
+        {nameImg && <span className="crop-file-name">File name: {nameImg}</span>}
         <div className="crop-wrapper-buttons">
           <Button
             completedCrop={completedCrop}
@@ -216,15 +241,38 @@ const CropImage: React.FC = () => {
           />
           <Button
             completedCrop={completedCrop}
-            title="Send To server"
-            func={sendToServer}
+            title="Send to server"
+            func={preSendToServer}
           />
           <Button
             completedCrop={completedCrop}
-            title="Convert crop to base64"
+            title="Convert to base64"
             func={convertToBase64}
           />
         </div>
+        {isVisibleInput && (
+          <div
+          className="crop-input-api-wrapper"
+          >
+            <input
+            placeholder="Enter server api"
+            className="crop-input-api"
+              type="text"
+              value={serverUrl}
+              onChange={(e) => setServerUrl(e.target.value)}
+            />
+            <Button
+              completedCrop={completedCrop}
+              title="Send"
+              func={sendToServer}
+            />
+            <Button
+              completedCrop={completedCrop}
+              title="Cancel"
+              func={abortSending}
+            />
+          </div>
+        )}
         {completedImage && (
           <p className="crop-completed-image">
             <span className="crop-completed-image-button" onClick={copyText}>

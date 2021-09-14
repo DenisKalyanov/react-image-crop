@@ -17,8 +17,12 @@
   -webkit-box-shadow: 0px 0px 98px 63px rgba(34, 60, 80, 0.2);
   -moz-box-shadow: 0px 0px 98px 63px rgba(34, 60, 80, 0.2);
   box-shadow: 0px 0px 98px 63px rgba(34, 60, 80, 0.2);
-  margin: 50px 10%;
+  margin: 30px 10%;
+  margin-bottom: 150px;
 
+  .crop-title {
+    margin: 10px;
+  }
   .crop-wrapper-input {
     height: 300px;
     margin: 10px;
@@ -55,15 +59,10 @@
     }
   }
 
-  .crop-wrapper-buttons {
-    .crop-button {
-      padding: 5px 10px;
-      margin: 10px;
-      outline: none;
-      border-radius: 10px;
-      font-size: 20px;
-      font-weight: 600;
-    }
+  .crop-file-name {
+    display: block;
+    font-size: 20px;
+    margin: 7px 0;
   }
 
   .crop-completed-image {
@@ -74,19 +73,61 @@
     position: relative;
     .crop-completed-image-button {
       background-color: rgb(172, 172, 172);
-      font-size: 16px;
+      font-size: 18px;
       font-weight: 600;
       border-radius: 5px;
       padding: 5px;
       color: white;
       position: absolute;
-      top: 5px;
-      right: 10px;
+      top: 0px;
+      right: 0px;
       cursor: pointer;
+      &:hover {
+        background-color: rgb(110, 110, 110);
+      }
     }
   }
 
-  .crop-input-button__active{
+  .crop-input-button__active {
     @include button-styles;
   }
+  .crop-input-api-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .crop-input-api {
+      width: 50%;
+      height: 40px;
+      font-size: 20px;
+      font-style: italic;
+      border-radius: 10px;
+    }
+  }
+}
+
+.crop-choose-resize {
+  margin-left: 10px;
+  font-size: 24px;
+  font-weight: 600;
+  color: rgb(36, 36, 36);
+}
+
+.crop-label {
+  font-size: 22px;
+  margin: 0 10px;
+  color: rgb(36, 36, 36);
+}
+
+.crop-wrapper-buttons {
+  display: flex;
+  justify-content: center;
+}
+.crop-button {
+  padding: 5px 10px;
+  margin: 10px;
+  outline: none;
+  border-radius: 10px;
+  font-size: 20px;
+  font-weight: 600;
 }

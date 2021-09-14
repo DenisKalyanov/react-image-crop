@@ -1,5 +1,4 @@
-import React from "react";
-import CropImage from "./CropImage";
+import CropImage from "./components/CropImage";
 
 const App: React.FC = (): JSX.Element => <CropImage />;
 
