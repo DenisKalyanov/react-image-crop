@@ -2,6 +2,8 @@ import React, { useState, useCallback, useRef, useEffect } from "react";
 import ReactCrop from "react-image-crop";
 
 import "react-image-crop/dist/ReactCrop.css";
+import Button from "./Button";
+import "./style.scss";
 
 interface Crop {
   unit: "px" | "%";
@@ -16,11 +18,13 @@ const UploadAvatarModal: React.FC = () => {
   const imgRef = useRef<HTMLImageElement>();
   const fileInput = useRef<HTMLInputElement | null>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
-  
+
   const [upImg, setUpImg] = useState<string>("");
   const [nameImg, setNameImg] = useState<string | undefined | null>(null);
   const [cropBase64, setCropBase64] = useState<any>("");
-  const [crop, setCrop] = useState<Crop>({ unit: "%", width: 30, aspect: 1 });
+  const [cropFile, setCropFile] = useState<any>("");
+  const [completedImage, setCompletedImage] = useState<any>();
+  const [crop, setCrop] = useState<Crop>({ unit: "%", width: 30 });
   const [completedCrop, setCompletedCrop] = useState<Crop | null>(null);
 
   const onSelectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,18 +44,17 @@ const UploadAvatarModal: React.FC = () => {
     if (!canvas) {
       return;
     }
-
     canvas.toBlob(
       (blob: Blob | null) => {
-        const readerAvatar: FileReader = new FileReader();
-        if (blob != null) readerAvatar.readAsDataURL(blob);
-        readerAvatar.onload = () => {
-          // props.setAvatar(readerAvatar.result);
+        const readerBase64: FileReader = new FileReader();
+        if (blob != null) readerBase64.readAsDataURL(blob);
+        readerBase64.onload = () => {
+          setCropBase64(readerBase64.result);
         };
-        const reader: FileReader = new FileReader();
-        if (blob != null) reader.readAsArrayBuffer(blob);
-        reader.onload = () => {
-          setCropBase64(reader.result);
+        const readerArrayBuffer: FileReader = new FileReader();
+        if (blob != null) readerArrayBuffer.readAsArrayBuffer(blob);
+        readerArrayBuffer.onload = () => {
+          setCropFile(readerArrayBuffer.result);
         };
       },
       "image/jpeg",
@@ -100,9 +103,29 @@ const UploadAvatarModal: React.FC = () => {
     generateAvatar(canvas);
   }, [completedCrop]);
 
+  const downloadImage = () => {
+    if (!previewCanvasRef.current) {
+      return;
+    }
+    previewCanvasRef.current.toBlob(
+      (blob) => {
+        const previewUrl = window.URL.createObjectURL(blob);
+
+        const anchor = document.createElement("a");
+        anchor.download = "cropPreview.png";
+        anchor.href = URL.createObjectURL(blob);
+        anchor.click();
+
+        window.URL.revokeObjectURL(previewUrl);
+      },
+      "image/png",
+      1
+    );
+  };
+
   async function sendToServer() {
     const completedAvatarImage = new File(
-      [cropBase64],
+      [cropFile],
       nameImg || "name does not exist",
       {
         type: "image/png",
@@ -121,41 +144,59 @@ const UploadAvatarModal: React.FC = () => {
     });
   }
 
+  const convertToBase64 = () => {
+    setCompletedImage(cropBase64);
+  };
+
+  const copyText = () => navigator.clipboard.writeText(completedImage);
+
+  const currentClick = () => {
+    if (fileInput.current !== null) fileInput.current.click();
+  };
+
+  const inputTemplate = (hiddenElement: boolean) => (
+    <>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={onSelectFile}
+        className="crop-input"
+        ref={fileInput}
+        hidden={hiddenElement}
+      />
+      <button
+        type="button"
+        className={`crop-input-button ${
+          hiddenElement ? "crop-input-button__active" : ""
+        }`}
+        onClick={currentClick}
+      >
+        Choose file
+      </button>
+    </>
+  );
+
   return (
     <>
-      <div className="" style={{ width: "450px" }}>
-        <div>
-          {!nameImg && (
-            <div>
-              <span>
-                Drag and drop files to here to upload (png, jpeg, webp, bmp,
-                ico.)
-              </span>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={onSelectFile}
-                className="crop-input"
-                ref={fileInput}
-              />
-              <button
-                type="button"
-                className="crop-button"
-                onClick={() => {
-                  if (fileInput.current !== null) fileInput.current.click();
-                }}
-              >
-                Choose file
-              </button>
-            </div>
-          )}
-          <ReactCrop
-            src={upImg}
-            onImageLoaded={onLoad}
-            crop={crop}
-            onChange={(e: Crop) => setCrop(e)}
-            onComplete={(e: Crop) => setCompletedCrop(e)}
-          />
+      <div className="crop-wrapper">
+        <h1>React crop image</h1>
+        {!nameImg && (
+          <div className="crop-wrapper-input">
+            <span className="crop-input-description">
+              Drag and drop files to here to upload (png, jpeg, webp, bmp, ico.)
+            </span>
+            {inputTemplate(false)}
+          </div>
+        )}
+        {nameImg && inputTemplate(true)}
+        <ReactCrop
+          src={upImg}
+          onImageLoaded={onLoad}
+          crop={crop}
+          onChange={(e: Crop) => setCrop(e)}
+          onComplete={(e: Crop) => setCompletedCrop(e)}
+        />
+        {completedCrop && (
           <div>
             <canvas
               ref={previewCanvasRef}
@@ -163,34 +204,35 @@ const UploadAvatarModal: React.FC = () => {
                 width: Math.round(completedCrop?.width ?? 0),
                 height: Math.round(completedCrop?.height ?? 0),
               }}
-              hidden
             />
           </div>
-          <span>{nameImg}</span>
-          <div>
-            <button disabled={!completedCrop?.width || !completedCrop?.height}>
-              Download
-            </button>
-            <button
-              disabled={!completedCrop?.width || !completedCrop?.height}
-              onClick={() => sendToServer()}
-            >
-              Send To server
-            </button>
-            <button
-              disabled={!completedCrop?.width || !completedCrop?.height}
-              // onClick={() => sendToServer()}
-            >
-              Convert crop to base64
-            </button>
-            <button
-              disabled={!completedCrop?.width || !completedCrop?.height}
-              // onClick={() => sendToServer()}
-            >
-              Convert crop to file
-            </button>
-          </div>
+        )}
+        {nameImg && <span>File name: {nameImg}</span>}
+        <div className="crop-wrapper-buttons">
+          <Button
+            completedCrop={completedCrop}
+            title="Download"
+            func={downloadImage}
+          />
+          <Button
+            completedCrop={completedCrop}
+            title="Send To server"
+            func={sendToServer}
+          />
+          <Button
+            completedCrop={completedCrop}
+            title="Convert crop to base64"
+            func={convertToBase64}
+          />
         </div>
+        {completedImage && (
+          <p className="crop-completed-image">
+            <span className="crop-completed-image-button" onClick={copyText}>
+              COPY
+            </span>
+            {completedImage}
+          </p>
+        )}
       </div>
     </>
   );
