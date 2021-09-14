@@ -1,4 +1,7 @@
-# Custom React image crop
+# React image crop
+
+**You can use the app by this address**
+*https://react-image-crop.web.app/*
 
 ## In this project you can:
 1. Download crop image
@@ -6,7 +9,6 @@
 3. Get crop image to base64 format
 
 ## Available Scripts
-
 In the project directory, you can run:
 
 ### `yarn start`
