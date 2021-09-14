@@ -14,7 +14,7 @@ interface Crop {
   height?: number;
 }
 
-const UploadAvatarModal: React.FC = () => {
+const CropImage: React.FC = () => {
   const imgRef = useRef<HTMLImageElement>();
   const fileInput = useRef<HTMLInputElement | null>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -238,4 +238,4 @@ const UploadAvatarModal: React.FC = () => {
   );
 };
 
-export default UploadAvatarModal;
+export default CropImage;

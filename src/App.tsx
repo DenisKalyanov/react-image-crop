@@ -1,6 +1,6 @@
 import React from "react";
-import UploadAvatarModal from "./UploadAvatarModal";
+import CropImage from "./CropImage";
 
-const App: React.FC = (): JSX.Element => <UploadAvatarModal />;
+const App: React.FC = (): JSX.Element => <CropImage />;
 
 export default App;
